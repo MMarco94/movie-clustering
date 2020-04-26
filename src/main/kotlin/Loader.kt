@@ -5,7 +5,7 @@ interface Loader {
 	fun loadGraph(distance: Distance): ClusterInput
 }
 
-private val GRAPH_FILE = File("graph")
+private val GRAPH_FILE = File("graph.small")
 
 object CachedLoader : Loader {
 	override fun loadGraph(distance: Distance): ClusterInput {
@@ -30,14 +30,15 @@ object FileLoader : Loader {
 
 object DBLoader : Loader {
 	private const val USER_LIMIT = 10000L
-	private const val ENTITY_LIMIT = 10000L
+	private const val ENTITY_LIMIT = 200L
 
 	override fun loadGraph(distance: Distance): ClusterInput {
 		connection.prepareStatement(
 			"""
                 CREATE TEMPORARY TABLE TopUsers (PRIMARY KEY (user)) SELECT user, COUNT(*) cnt
                 FROM ConsumedEntity ce
-                GROUP BY user
+          		INNER JOIN ConsumedMovie cm ON ce.idEntity = cm.idEntity
+				GROUP BY user
                 ORDER BY cnt DESC
                 LIMIT ?
             """

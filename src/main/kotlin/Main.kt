@@ -11,10 +11,10 @@ fun main() {
 	val data = CachedLoader.loadGraph(CosinDistance)
 	println("Created a graph with ${data.users.size} users, ${data.entities.size} entities")
 
-	//testSpectral(data)
+	testSpectral(data)
 	//textXMeansAdjacency(data)
 	//textXMeansSimilarity(data)
-	testDominantSets(data)
+	//testDominantSets(data)
 }
 
 
@@ -46,13 +46,14 @@ private fun testXMeans(data: ClusterInput, testName: String, xMeans: XMeans, mat
 
 private fun testSpectral(data: ClusterInput) {
 	println("Testing Spectral")
-	val spectral = SpectralClustering.fit(data.entitySimilarityMatrix.toTypedArray(), 50, 1.0)//TODO: search for best sigma
+	val spectral = SpectralClustering.fit(data.entitySimilarityMatrix.toTypedArray(), 7, 1.0)//TODO: search for best sigma
 	val entitiesWithClusterId = data.entities.withIndex().associateWith { (eIndex, _) -> spectral.y[eIndex] }
 	val sorting = entitiesWithClusterId.entries.sortedBy { it.value }.map { it.key.index }
 	val sortedMatrix = data.entitySimilarityMatrix.sortUsing(sorting).map { it.asList().sortUsing(sorting).toDoubleArray() }
 
 	ImageIO.write(sortedMatrix.toImage(), "png", File(outputDir, "spectral/sorted.png"))
 
+	return
 	val clusters = entitiesWithClusterId.entries.groupBy { it.value }.mapValues { it.value.map { it.key.value } }
 	clusters.forEach { (cluster, entities) ->
 		saveFile(File(outputDir, "spectral/cluster-$cluster.txt"), entities)
@@ -76,7 +77,8 @@ private fun testDominantSets(data: ClusterInput) {
 			if (row < output.dominantSet.size || col < output.dominantSet.size) {
 				303F / 360F //Dominant set
 			} else {
-				124F / 360F
+				303F / 360F
+				//124F / 360F
 			}
 		}, "png", File(outputDir, "ds/similarities-sorted-$index.png"))
 

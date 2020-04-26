@@ -10,7 +10,7 @@ fun readCluster(file: File): List<Node.Entity> {
 }
 
 fun main() {
-	val clusterAlgorithm = "spectral"
+	val clusterAlgorithm = "ds"
 	val skipFirst = false
 
 	val clusters = File(outputDir, clusterAlgorithm).listFiles()!!.mapNotNull { file ->
