@@ -8,13 +8,14 @@ val outputDir = File("out")
 
 //https://github.com/erogol/DominantSetClustering/blob/master/clusterDS.m
 fun main() {
+	outputDir.mkdir()
 	val data = CachedLoader.loadGraph(CosinDistance)
 	println("Created a graph with ${data.users.size} users, ${data.entities.size} entities")
 
-	testSpectral(data)
-	//textXMeansAdjacency(data)
-	//textXMeansSimilarity(data)
-	//testDominantSets(data)
+	//testSpectral(data)
+	//testXMeansAdjacency(data)
+	testDominantSets(data)
+	//testXMeansSimilarity(data)
 }
 
 
@@ -36,7 +37,7 @@ private fun testXMeans(data: ClusterInput, testName: String, xMeans: XMeans, mat
 		matrix.sortUsing(sorting)
 	}
 
-	ImageIO.write(sortedMatrix.toImage(), "png", File(outputDir, "xmeans-$testName/sorted.png"))
+	ImageIO.write(sortedMatrix.toImage(), "png", File(outputDir, "xmeans-$testName/sorted.png").ensureDir())
 
 	val clusters = entitiesWithClusterId.entries.groupBy { it.value }.mapValues { it.value.map { it.key.value } }
 	clusters.forEach { (cluster, entities) ->
@@ -51,12 +52,11 @@ private fun testSpectral(data: ClusterInput) {
 	val sorting = entitiesWithClusterId.entries.sortedBy { it.value }.map { it.key.index }
 	val sortedMatrix = data.entitySimilarityMatrix.sortUsing(sorting).map { it.asList().sortUsing(sorting).toDoubleArray() }
 
-	ImageIO.write(sortedMatrix.toImage(), "png", File(outputDir, "spectral/sorted.png"))
+	ImageIO.write(sortedMatrix.toImage(), "png", File(outputDir, "spectral/sorted.png").ensureDir())
 
-	return
 	val clusters = entitiesWithClusterId.entries.groupBy { it.value }.mapValues { it.value.map { it.key.value } }
 	clusters.forEach { (cluster, entities) ->
-		saveFile(File(outputDir, "spectral/cluster-$cluster.txt"), entities)
+		saveFile(File(outputDir, "spectral/cluster-$cluster.txt").ensureDir(), entities)
 	}
 }
 
@@ -64,11 +64,11 @@ private fun testDominantSets(data: ClusterInput) {
 	println("Testing Dominant sets")
 	data.dominantSetClusters().forEachIndexed { index, output ->
 		thread {
-			saveFile(File(outputDir, "ds/cluster-$index.txt"), output.dominantSet)
+			saveFile(File(outputDir, "ds/cluster-$index.txt").ensureDir(), output.dominantSet)
 		}
 
-		ImageIO.write(output.input.userEntityHeatMap(), "png", File(outputDir, "ds/heatMap-$index.png"))
-		ImageIO.write(output.input.entitySimilarityMatrix.toImage(), "png", File(outputDir, "ds/similarities-$index.png"))
+		ImageIO.write(output.input.userEntityHeatMap(), "png", File(outputDir, "ds/heatMap-$index.png").ensureDir())
+		ImageIO.write(output.input.entitySimilarityMatrix.toImage(), "png", File(outputDir, "ds/similarities-$index.png").ensureDir())
 
 		val sim = output.input.entitySimilarityMatrix
 		val idx = output.dominantSetWeights.withIndex().sortedByDescending { it.value }.map { it.index }
@@ -77,14 +77,14 @@ private fun testDominantSets(data: ClusterInput) {
 			if (row < output.dominantSet.size || col < output.dominantSet.size) {
 				303F / 360F //Dominant set
 			} else {
-				303F / 360F
-				//124F / 360F
+				124F / 360F
 			}
-		}, "png", File(outputDir, "ds/similarities-sorted-$index.png"))
+		}, "png", File(outputDir, "ds/similarities-sorted-$index.png").ensureDir())
 
 	}
 }
 
+private fun File.ensureDir() = apply { parentFile.mkdirs() }
 private fun saveFile(file: File, entities: List<Node.Entity>) {
 	file.printWriter().use { w ->
 		entities.forEach { entity ->

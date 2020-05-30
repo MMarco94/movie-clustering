@@ -22,6 +22,14 @@ fun List<DoubleArray>.mapOnEach(f: (Double) -> Double): List<DoubleArray> {
 	}
 }
 
+fun List<DoubleArray>.mapOnEachIndexed(f: (Double, i1: Int, i2: Int) -> Double): List<DoubleArray> {
+	return mapIndexed { index1, arr ->
+		arr.mapIndexed { index2, d ->
+			f(d, index1, index2)
+		}.toDoubleArray()
+	}
+}
+
 fun <T> List<T>.sortUsing(indexes: List<Int>): List<T> {
 	require(size == indexes.size)
 	return indexes.map { get(it) }

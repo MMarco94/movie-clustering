@@ -4,7 +4,7 @@ import java.awt.image.BufferedImage
 import java.io.File
 import kotlin.math.exp
 
-class ClusterOutput(
+class DSClusterOutput(
 	val input: ClusterInput,
 	val dominantSet: List<Node.Entity>,
 	val dominantSetWeights: DoubleArray
@@ -39,13 +39,13 @@ class ClusterInput private constructor(
 		return XMeans.fit(adjacencyMatrix.toTypedArray(), 50)
 	}
 
-	fun extractDominantSet(continueCondition: ContinueCondition = DefaultContinueCondition): ClusterOutput {
+	fun extractDominantSet(continueCondition: ContinueCondition = DefaultContinueCondition()): DSClusterOutput {
 		val dominantSetWeights = dominantSetWeights(entitySimilarityMatrix, continueCondition)
-		return ClusterOutput(
+		return DSClusterOutput(
 			this,
 			dominantSetWeights
 				.withIndex()
-				.filter { it.value > 0 }
+				.filter { it.value > ZERO }
 				.sortedByDescending { it.value }
 				.map { entities[it.index] },
 			dominantSetWeights
@@ -68,7 +68,7 @@ class ClusterInput private constructor(
 		return builder.build()
 	}
 
-	fun dominantSetClusters(continueCondition: ContinueCondition = DefaultContinueCondition): Sequence<ClusterOutput> {
+	fun dominantSetClusters(continueCondition: ContinueCondition = DefaultContinueCondition()): Sequence<DSClusterOutput> {
 		return generateSequence(extractDominantSet(continueCondition)) { prev ->
 			val newInput = prev.input.withoutEntities(prev.dominantSet)
 			if (newInput.entities.isNotEmpty()) {
@@ -78,7 +78,7 @@ class ClusterInput private constructor(
 	}
 
 	companion object {
-		fun load(file: File): ClusterInput {
+		fun load(file: File, userLimit: Int = Int.MAX_VALUE, entityLimit: Int = Int.MAX_VALUE): ClusterInput {
 			file.useLines { ls ->
 				val lines = ls.iterator()
 				val distance = Distance.deserialize(lines.next())
@@ -90,16 +90,21 @@ class ClusterInput private constructor(
 				repeat(lines.next().toInt()) {
 					entities.add(Node.Entity.deserialize(lines.next()))
 				}
-				val builder = Builder(distance, users, entities)
+				val builder = Builder(distance, users.take(userLimit), entities.take(entityLimit))
 				for (eIndex in 0 until lines.next().toInt()) {
 					repeat(lines.next().toInt()) {
 						val split = lines.next().split(" ")
-						builder.addRelation(eIndex, split[0].toInt(), split[1].toDouble())
+						val userIndex = split[0].toInt()
+						val weight = split[1].toDouble()
+						if (eIndex < entityLimit && userIndex < userLimit) {
+							builder.addRelation(eIndex, userIndex, weight)
+						}
 					}
 				}
 				val similarity = mutableListOf<DoubleArray>()
-				repeat(lines.next().toInt()) {
-					similarity.add(lines.next().split(" ").map { it.toDouble() }.toDoubleArray())
+				repeat(lines.next().toInt()) { entityIndex ->
+					if (entityIndex < entityLimit)
+						similarity.add(lines.next().split(" ").take(entityLimit).map { it.toDouble() }.toDoubleArray())
 				}
 				builder.similarityMatrix = similarity
 				return builder.build()

@@ -5,7 +5,9 @@ interface Loader {
 	fun loadGraph(distance: Distance): ClusterInput
 }
 
-private val GRAPH_FILE = File("graph.small")
+private val GRAPH_FILE = File("graph.20000")
+private const val USER_LIMIT = 10000
+private const val ENTITY_LIMIT = 10000
 
 object CachedLoader : Loader {
 	override fun loadGraph(distance: Distance): ClusterInput {
@@ -22,15 +24,13 @@ object CachedLoader : Loader {
 
 object FileLoader : Loader {
 	override fun loadGraph(distance: Distance): ClusterInput {
-		return ClusterInput.load(GRAPH_FILE).apply {
+		return ClusterInput.load(GRAPH_FILE, USER_LIMIT, ENTITY_LIMIT).apply {
 			require(this.distanceAlgorithm == distance)
 		}
 	}
 }
 
 object DBLoader : Loader {
-	private const val USER_LIMIT = 10000L
-	private const val ENTITY_LIMIT = 200L
 
 	override fun loadGraph(distance: Distance): ClusterInput {
 		connection.prepareStatement(
@@ -43,7 +43,7 @@ object DBLoader : Loader {
                 LIMIT ?
             """
 		).use { ps ->
-			ps.setLong(1, USER_LIMIT)
+			ps.setInt(1, USER_LIMIT)
 			ps.execute()
 		}
 		connection.prepareStatement(
@@ -56,7 +56,7 @@ object DBLoader : Loader {
                 LIMIT ?
             """
 		).use { ps ->
-			ps.setLong(1, ENTITY_LIMIT)
+			ps.setInt(1, ENTITY_LIMIT)
 			ps.execute()
 		}
 		val users = connection.map("SELECT user FROM TopUsers") { Node.User(getLong("user")) }

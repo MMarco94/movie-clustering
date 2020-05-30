@@ -1,5 +1,5 @@
-import com.femastudios.entity.entities.ConsumedEntity
 import com.femastudios.entity.entities.User
+import com.femastudios.utils.mysql.asIterable
 import java.io.File
 import java.util.*
 
@@ -21,11 +21,16 @@ fun main() {
 		} else null
 	}.toMap()
 
+	val sawMovies = connection.prepareStatement("SELECT ce.entity FROM ConsumedEntity ce INNER JOIN ConsumedMovie cm ON ce.idEntity = cm.idEntity WHERE ce.user = ?").use { ps ->
+		ps.setLong(1, User.Get.byCurrentUsername(connection, "MMarco").id())
+		ps.executeQuery().use { rs ->
+			rs.asIterable().map {
+				Node.Entity(it.getLong("entity"))
+			}
+		}
+	}
 
-	ConsumedEntity.Get.allByUser(
-		connection,
-		User.Get.byCurrentUsername(connection, "MMarco")
-	).map { Node.Entity(it.get().entity(connection).id()) }.distinct().associateWith {
+	sawMovies.distinct().associateWith {
 		getClusterForEntity(clusters, it)
 	}.filterValues { it != null && (!skipFirst || it.key > 0) }.mapValues { it.value!! }.forEach { (entity, cluster) ->
 		println("${entity.name()} (cluster ${cluster.key}):")

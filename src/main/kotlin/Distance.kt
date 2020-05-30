@@ -40,12 +40,12 @@ fun List<DoubleArray>.similarityMatrix(distance: Distance = EuclideanDistance): 
 	if (isEmpty()) return this
 	val distanceMatrix = distance(distance).mapOnEach { it * it }
 	val sigma2 = MathEx.median(distanceMatrix.flatMap { it.toList() }.toDoubleArray())
-	return distanceMatrix.mapOnEach {
-		exp(-it / sigma2)
+	return distanceMatrix.mapOnEachIndexed { d, i1, i2 ->
+		if (i1 == i2) 0.0 else exp(-d / sigma2)
 	}
 }
 
-fun List<DoubleArray>.distance(distance: Distance = EuclideanDistance): List<DoubleArray> {
+private fun List<DoubleArray>.distance(distance: Distance = EuclideanDistance): List<DoubleArray> {
 	println("Calculating Distances...")
 	val ret = mutableListOf<DoubleArray>()
 	forEachIndexed { firstIndex, firstEntity ->

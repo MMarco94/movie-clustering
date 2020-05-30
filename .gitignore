@@ -1,5 +1,6 @@
-out*
-graph
+out/*
+out.old/*
+graph*
 
 
 # Created by https://www.gitignore.io/api/gradle,kotlin,intellij+all
