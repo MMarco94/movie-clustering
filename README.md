@@ -17,7 +17,8 @@ PS: for illustration purposes, some images in this report may use less than 1000
 ### Data representation
 The same data can be viewed in two different ways: 
  - A `user` * `movie` matrix that encodes how many time a user watch a movie
- - A `movie` * `movie` matrix that encodes the similarity between two movies. For this project, I choose to compute this by using the cosine similarity between rows on the previous matrix
+ - A `movie` * `movie` matrix that encodes the similarity between two movies. For this project, I choose to compute this by using the Gaussian kernel with cosine similarity between rows on the previous matrix
+ 
  
 ### Data summary
 ![User * movie matrix](out.resources/user_movie_200.png)  

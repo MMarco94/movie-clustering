@@ -12,9 +12,9 @@ fun main() {
 	val data = CachedLoader.loadGraph(CosinDistance)
 	println("Created a graph with ${data.users.size} users, ${data.entities.size} entities")
 
-	//testSpectral(data)
+	testSpectral(data)
 	//testXMeansAdjacency(data)
-	testDominantSets(data)
+	//testDominantSets(data)
 	//testXMeansSimilarity(data)
 }
 
@@ -47,7 +47,7 @@ private fun testXMeans(data: ClusterInput, testName: String, xMeans: XMeans, mat
 
 private fun testSpectral(data: ClusterInput) {
 	println("Testing Spectral")
-	val spectral = SpectralClustering.fit(data.entitySimilarityMatrix.toTypedArray(), 7, 1.0)//TODO: search for best sigma
+	val spectral = SpectralClustering.fit(data.entitySimilarityMatrix.toTypedArray(), 100, 10.0)//TODO: search for best sigma
 	val entitiesWithClusterId = data.entities.withIndex().associateWith { (eIndex, _) -> spectral.y[eIndex] }
 	val sorting = entitiesWithClusterId.entries.sortedBy { it.value }.map { it.key.index }
 	val sortedMatrix = data.entitySimilarityMatrix.sortUsing(sorting).map { it.asList().sortUsing(sorting).toDoubleArray() }

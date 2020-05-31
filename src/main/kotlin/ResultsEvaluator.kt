@@ -1,4 +1,9 @@
+import com.femastudios.download.HttpDownloader
+import com.femastudios.entity.Entity
+import com.femastudios.entity.EntityUtils
+import com.femastudios.entity.entities.Movie
 import com.femastudios.entity.entities.User
+import com.femastudios.json.toJsonString
 import com.femastudios.utils.mysql.asIterable
 import java.io.File
 import java.util.*
@@ -11,7 +16,6 @@ fun readCluster(file: File): List<Node.Entity> {
 
 fun main() {
 	val clusterAlgorithm = "ds"
-	val skipFirst = false
 
 	val clusters = File(outputDir, clusterAlgorithm).listFiles()!!.mapNotNull { file ->
 		val matchResult = "cluster-(\\d+)\\.txt".toRegex().matchEntire(file.name)
@@ -21,6 +25,72 @@ fun main() {
 		} else null
 	}.toMap()
 
+	similarToPromped(clusters)
+	//similarToAlreadyWatched(clusters)
+}
+
+private fun similarToPromped(clusters: Map<Int, List<Node.Entity>>) {
+	val scanner = Scanner(System.`in`)
+	while (true) {
+		println("Insert an movie name, id or uid:")
+		val line = scanner.nextLine()
+		val entity = when {
+			line.toLongOrNull() != null -> Node.Entity(line.toLong())
+			EntityUtils.isUID(line) -> Node.Entity(Entity.Get.byUID<Entity>(connection, line).id())
+			else -> search(line)?.let { Node.Entity(it.id()) }
+		}
+
+		if (entity != null) {
+			println("Searching for ${entity.name()}")
+			val cluster = getClusterForEntity(clusters, entity)
+			if (cluster == null) {
+				println("Not found :(")
+			} else {
+				println("Found in cluster ${cluster.key}. Neighbors:")
+				getSimilarEntities(cluster, entity).take(50).forEachIndexed { index, otherEntity ->
+					println("$index) ${otherEntity.name()}")
+				}
+			}
+		}
+	}
+}
+
+private fun search(query: String): Movie? {
+	val movieUid = HttpDownloader("https://api.everyfad.com/explore/block").apply {
+		addParam("start", 0)
+		addParam(
+			"explore_params", mapOf(
+				"country" to "ITA",
+				"include_adult" to false
+			).toJsonString()
+		)
+		addParam(
+			"explore_block", mapOf(
+				"fema_explore_block_type_id" to "search",
+				"entity_types" to listOf("Movie"),
+				"extra" to mapOf(
+					"query" to query,
+					"context" to "MOVIESFAD",
+					"locale" to "ita-IT"
+				)
+			).toJsonString()
+		)
+		addParam("count", 1)
+		putHeader("Fema-Device-Id", "movie_clustering_tester")
+		putHeader("Fema-Device-Name", "Movie Clustering Tester")
+		putHeader("Fema-Device-Codename", "movie_clustering_tester")
+		putHeader("Fema-Device-Type", "computer")
+		putHeader("Fema-OS-Name", "Android")
+		putHeader("Fema-OS-Version", "5")
+		putHeader("Fema-Client-ID", "tvseries")
+		putHeader("Fema-Client-Version", "179")
+		putHeader("Fema-To-Array", "Version:LAST")
+	}.downloadJsonObject().jsonObjectAt("items").keys.firstOrNull()
+	return movieUid?.let { Movie.Get.byUID(connection, it) }
+}
+
+private fun similarToAlreadyWatched(clusters: Map<Int, List<Node.Entity>>) {
+	val skipFirst = false
 	val sawMovies = connection.prepareStatement("SELECT ce.entity FROM ConsumedEntity ce INNER JOIN ConsumedMovie cm ON ce.idEntity = cm.idEntity WHERE ce.user = ?").use { ps ->
 		ps.setLong(1, User.Get.byCurrentUsername(connection, "MMarco").id())
 		ps.executeQuery().use { rs ->
@@ -29,33 +99,12 @@ fun main() {
 			}
 		}
 	}
-
 	sawMovies.distinct().associateWith {
 		getClusterForEntity(clusters, it)
 	}.filterValues { it != null && (!skipFirst || it.key > 0) }.mapValues { it.value!! }.forEach { (entity, cluster) ->
 		println("${entity.name()} (cluster ${cluster.key}):")
-		getSimilarEntities(cluster, entity).take(15).forEachIndexed { index, otherEntity ->
+		getSimilarEntities(cluster, entity).take(50).forEachIndexed { index, otherEntity ->
 			println("\t$index) ${otherEntity.name()} (${otherEntity.id})")
-		}
-	}
-
-
-	val scanner = Scanner(System.`in`)
-	while (true) {
-		println("Insert an entity Id:")
-		val id = scanner.nextLine().toLongOrNull()
-		if (id != null) {
-			val entity = Node.Entity(id)
-			println("Searching for ${entity.name()}")
-			val cluster = getClusterForEntity(clusters, entity)
-			if (cluster == null) {
-				println("Not found :(")
-			} else {
-				println("Found in cluster ${cluster.key}. Neighbors:")
-				getSimilarEntities(cluster, entity).take(15).forEachIndexed { index, otherEntity ->
-					println("$index) ${otherEntity.name()}")
-				}
-			}
 		}
 	}
 }
