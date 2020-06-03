@@ -6,8 +6,8 @@ interface Loader {
 }
 
 private val GRAPH_FILE = File("graph.20000")
-private const val USER_LIMIT = 10000
-private const val ENTITY_LIMIT = 10000
+private const val USER_LIMIT = 20000
+private const val ENTITY_LIMIT = 8192
 
 object CachedLoader : Loader {
 	override fun loadGraph(distance: Distance): ClusterInput {
@@ -24,7 +24,7 @@ object CachedLoader : Loader {
 
 object FileLoader : Loader {
 	override fun loadGraph(distance: Distance): ClusterInput {
-		return ClusterInput.load(GRAPH_FILE, USER_LIMIT, ENTITY_LIMIT).apply {
+		return ClusterInput.load(GRAPH_FILE).reduce(ENTITY_LIMIT).apply {
 			require(this.distanceAlgorithm == distance)
 		}
 	}

@@ -1,3 +1,4 @@
+import com.femastudios.kotlin.core.mapToSet
 import smile.clustering.XMeans
 import java.awt.Color
 import java.awt.image.BufferedImage
@@ -6,7 +7,7 @@ import kotlin.math.exp
 
 class DSClusterOutput(
 	val input: ClusterInput,
-	val dominantSet: List<Node.Entity>,
+	val dominantSet: Set<Node.Entity>,
 	val dominantSetWeights: DoubleArray
 )
 
@@ -17,6 +18,33 @@ class ClusterInput private constructor(
 	val adjacencyMatrix: List<DoubleArray>,//Entity x User map
 	val entitySimilarityMatrix: List<DoubleArray>//entity x entity
 ) {
+
+	fun reduce(entityLimit: Int): ClusterInput {
+		return reduce(entities.withIndex().sortedByDescending { getEntityWeight(it.index) }.take(entityLimit))
+	}
+
+	private fun reduce(entitiesToKeep: List<IndexedValue<Node.Entity>>): ClusterInput {
+		val entityIndexesToKeep = entitiesToKeep.mapToSet { it.index }
+		return ClusterInput(
+			distanceAlgorithm,
+			users,
+			entitiesToKeep.map { it.value },
+			adjacencyMatrix.filterIndexed { index, _ -> index in entityIndexesToKeep },
+			entitySimilarityMatrix.mapIndexedNotNull { i1, similarities ->
+				if (i1 in entityIndexesToKeep) {
+					similarities.filterIndexed { i2, _ -> i2 in entityIndexesToKeep }.toDoubleArray()
+				} else null
+			}
+		)
+	}
+
+	private fun getEntityWeight(entityIndex: Int): Double {
+		return adjacencyMatrix[entityIndex].sum()
+	}
+
+	fun withoutEntities(toRemove: Set<Node.Entity>): ClusterInput {
+		return reduce(entities.withIndex().filter { it.value !in toRemove })
+	}
 
 	fun userEntityHeatMap(): BufferedImage {
 		println("Computing userEntityHeatMap")
@@ -47,25 +75,9 @@ class ClusterInput private constructor(
 				.withIndex()
 				.filter { it.value > ZERO }
 				.sortedByDescending { it.value }
-				.map { entities[it.index] },
+				.mapToSet { entities[it.index] },
 			dominantSetWeights
 		)
-	}
-
-	fun withoutEntities(toRemove: List<Node.Entity>): ClusterInput {
-		val builder = Builder(distanceAlgorithm, users, entities.minus(toRemove))
-		val sim = mutableListOf<DoubleArray>()
-		entities.forEachIndexed { eIndex, e ->
-			if (e !in toRemove) {
-				sim.add(entitySimilarityMatrix[eIndex].filterIndexed { index, _ -> entities[index] !in toRemove }.toDoubleArray())
-				adjacencyMatrix[eIndex].forEachIndexed { uIndex, value ->
-					//can use uIndex, since users didn't change
-					builder.addRelation(e, uIndex, value)
-				}
-			}
-		}
-		builder.similarityMatrix = sim
-		return builder.build()
 	}
 
 	fun dominantSetClusters(continueCondition: ContinueCondition = DefaultContinueCondition()): Sequence<DSClusterOutput> {
@@ -78,7 +90,7 @@ class ClusterInput private constructor(
 	}
 
 	companion object {
-		fun load(file: File, userLimit: Int = Int.MAX_VALUE, entityLimit: Int = Int.MAX_VALUE): ClusterInput {
+		fun load(file: File): ClusterInput {
 			file.useLines { ls ->
 				val lines = ls.iterator()
 				val distance = Distance.deserialize(lines.next())
@@ -90,21 +102,18 @@ class ClusterInput private constructor(
 				repeat(lines.next().toInt()) {
 					entities.add(Node.Entity.deserialize(lines.next()))
 				}
-				val builder = Builder(distance, users.take(userLimit), entities.take(entityLimit))
+				val builder = Builder(distance, users, entities)
 				for (eIndex in 0 until lines.next().toInt()) {
 					repeat(lines.next().toInt()) {
 						val split = lines.next().split(" ")
 						val userIndex = split[0].toInt()
 						val weight = split[1].toDouble()
-						if (eIndex < entityLimit && userIndex < userLimit) {
-							builder.addRelation(eIndex, userIndex, weight)
-						}
+						builder.addRelation(eIndex, userIndex, weight)
 					}
 				}
 				val similarity = mutableListOf<DoubleArray>()
-				repeat(lines.next().toInt()) { entityIndex ->
-					if (entityIndex < entityLimit)
-						similarity.add(lines.next().split(" ").take(entityLimit).map { it.toDouble() }.toDoubleArray())
+				repeat(lines.next().toInt()) {
+					similarity.add(lines.next().split(" ").map { it.toDouble() }.toDoubleArray())
 				}
 				builder.similarityMatrix = similarity
 				return builder.build()

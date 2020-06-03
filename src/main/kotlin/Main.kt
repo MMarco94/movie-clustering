@@ -12,9 +12,9 @@ fun main() {
 	val data = CachedLoader.loadGraph(CosinDistance)
 	println("Created a graph with ${data.users.size} users, ${data.entities.size} entities")
 
-	testSpectral(data)
+	//testSpectral(data)
 	//testXMeansAdjacency(data)
-	//testDominantSets(data)
+	testDominantSets(data)
 	//testXMeansSimilarity(data)
 }
 
@@ -85,7 +85,7 @@ private fun testDominantSets(data: ClusterInput) {
 }
 
 private fun File.ensureDir() = apply { parentFile.mkdirs() }
-private fun saveFile(file: File, entities: List<Node.Entity>) {
+private fun saveFile(file: File, entities: Iterable<Node.Entity>) {
 	file.printWriter().use { w ->
 		entities.forEach { entity ->
 			w.println("${entity.id}: ${entity.name()}")
