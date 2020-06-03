@@ -1,5 +1,7 @@
 import smile.clustering.SpectralClustering
 import smile.clustering.XMeans
+import smile.math.matrix.DenseMatrix
+import smile.math.matrix.Matrix
 import java.io.File
 import javax.imageio.ImageIO
 import kotlin.concurrent.thread
@@ -12,9 +14,9 @@ fun main() {
 	val data = CachedLoader.loadGraph(CosinDistance)
 	println("Created a graph with ${data.users.size} users, ${data.entities.size} entities")
 
-	//testSpectral(data)
+	testSpectral(data)
 	//testXMeansAdjacency(data)
-	testDominantSets(data)
+	//testDominantSets(data)
 	//testXMeansSimilarity(data)
 }
 
@@ -47,7 +49,8 @@ private fun testXMeans(data: ClusterInput, testName: String, xMeans: XMeans, mat
 
 private fun testSpectral(data: ClusterInput) {
 	println("Testing Spectral")
-	val spectral = SpectralClustering.fit(data.entitySimilarityMatrix.toTypedArray(), 100, 10.0)//TODO: search for best sigma
+	val similarities = Matrix.of(data.entitySimilarityMatrix.toTypedArray())
+	val spectral = SpectralClustering.fit(similarities, 100)
 	val entitiesWithClusterId = data.entities.withIndex().associateWith { (eIndex, _) -> spectral.y[eIndex] }
 	val sorting = entitiesWithClusterId.entries.sortedBy { it.value }.map { it.key.index }
 	val sortedMatrix = data.entitySimilarityMatrix.sortUsing(sorting).map { it.asList().sortUsing(sorting).toDoubleArray() }
