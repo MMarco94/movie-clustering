@@ -7,7 +7,7 @@ interface Loader {
 
 private val GRAPH_FILE = File("graph.20000")
 private const val USER_LIMIT = 20000
-private const val ENTITY_LIMIT = 8192
+private const val ENTITY_LIMIT = 200
 
 object CachedLoader : Loader {
 	override fun loadGraph(distance: Distance): ClusterInput {

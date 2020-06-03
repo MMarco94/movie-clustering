@@ -28,7 +28,7 @@ class ClusterInput private constructor(
 		return ClusterInput(
 			distanceAlgorithm,
 			users,
-			entitiesToKeep.map { it.value },
+			entitiesToKeep.sortedBy { it.index }.map { it.value },
 			adjacencyMatrix.filterIndexed { index, _ -> index in entityIndexesToKeep },
 			entitySimilarityMatrix.mapIndexedNotNull { i1, similarities ->
 				if (i1 in entityIndexesToKeep) {
