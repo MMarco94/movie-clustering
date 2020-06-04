@@ -34,8 +34,8 @@ Since the data comes from real viewings that user logged in an Android applicati
  - Being a very popular movie
  - Being a "classic"
  
- Those biases are so strong that are clearly visible from the similarity matrix. For example, this image represents the pairwise similarities among the 200 most popular movies (the brighter the pixel, the higher the similarity).  
-![User * movie matrix](out/ds.200/similarities-sorted-0.png)  
+ Those biases are so strong they are clearly visible from the similarity matrix. For example, this image represents the pairwise similarities among the 200 most popular movies (the brighter the pixel, the higher the similarity).  
+![top 200 movies similarity matrix](out/top200-similarities.png)  
  As expected, basically all pairs have a high similarity, since the most popular movies have been watched by basically all users.
  
 ## Dominant sets clustering
