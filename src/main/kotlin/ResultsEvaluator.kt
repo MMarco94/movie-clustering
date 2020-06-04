@@ -7,6 +7,7 @@ import com.femastudios.json.toJsonString
 import com.femastudios.utils.mysql.asIterable
 import java.io.File
 import java.util.*
+import javax.imageio.ImageIO
 
 fun readCluster(file: File): List<Node.Entity> {
 	return file.useLines { line ->
@@ -15,15 +16,30 @@ fun readCluster(file: File): List<Node.Entity> {
 }
 
 fun main() {
-	val clusterAlgorithm = "ds"
+	//val clusterAlgorithm = "spectral.8192"
+	val clusterAlgorithm = "ds.8192"
 
 	val clusters = File(outputDir, clusterAlgorithm).listFiles()!!.mapNotNull { file ->
 		val matchResult = "cluster-(\\d+)\\.txt".toRegex().matchEntire(file.name)
 		if (matchResult != null) {
-			val clusterId = matchResult.groupValues[1].toInt()
-			clusterId to readCluster(file)
+			matchResult.groupValues[1].toInt() to readCluster(file)
 		} else null
 	}.toMap()
+
+	val graph = FileLoader.loadGraph(CosinDistance)
+	println("Average distances:")
+	val distances = graph.subClusterDistances(clusters.values.toList())
+	ImageIO.write(distances.asList().toImage(), "png", File(outputDir, "distances.png"))
+
+	println(distances.map { it.average() }.average())
+
+	println("Densities:")
+	clusters.values.forEach { entities ->
+		println(graph.intersection(entities.toSet()).density())
+	}
+	println("\n\n\n")
+
+
 
 	similarToPromped(clusters)
 	//similarToAlreadyWatched(clusters)

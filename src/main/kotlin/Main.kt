@@ -1,6 +1,5 @@
 import smile.clustering.SpectralClustering
 import smile.clustering.XMeans
-import smile.math.matrix.DenseMatrix
 import smile.math.matrix.Matrix
 import java.io.File
 import javax.imageio.ImageIO
@@ -14,9 +13,9 @@ fun main() {
 	val data = CachedLoader.loadGraph(CosinDistance)
 	println("Created a graph with ${data.users.size} users, ${data.entities.size} entities")
 
-	testSpectral(data)
+	//testSpectral(data)
 	//testXMeansAdjacency(data)
-	//testDominantSets(data)
+	testDominantSets(data)
 	//testXMeansSimilarity(data)
 }
 
@@ -77,6 +76,7 @@ private fun testDominantSets(data: ClusterInput) {
 		val idx = output.dominantSetWeights.withIndex().sortedByDescending { it.value }.map { it.index }
 		val sortedSim = sim.sortUsing(idx).map { it.asList().sortUsing(idx).toDoubleArray() }
 		ImageIO.write(sortedSim.toImage { row, col ->
+			return@toImage 124F / 360F
 			if (row < output.dominantSet.size || col < output.dominantSet.size) {
 				303F / 360F //Dominant set
 			} else {

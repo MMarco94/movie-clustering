@@ -42,8 +42,38 @@ class ClusterInput private constructor(
 		return adjacencyMatrix[entityIndex].sum()
 	}
 
-	fun withoutEntities(toRemove: Set<Node.Entity>): ClusterInput {
+	fun without(toRemove: Set<Node.Entity>): ClusterInput {
 		return reduce(entities.withIndex().filter { it.value !in toRemove })
+	}
+
+	fun intersection(toKeep: Set<Node.Entity>): ClusterInput {
+		return reduce(entities.withIndex().filter { it.value in toKeep })
+	}
+
+	fun density(): Double {
+		return entitySimilarityMatrix.sumByDouble { it.average() } / entities.size
+	}
+
+	fun subClusterDistances(clusters: List<Collection<Node.Entity>>): Array<DoubleArray> {
+		val entityToCluster = mutableMapOf<Node.Entity, Int>()
+		clusters.forEachIndexed { index, entities ->
+			entities.forEach { e ->
+				entityToCluster[e] = index
+			}
+		}
+		val distances = Array(clusters.size) { DoubleArray(clusters.size) }
+
+		entities.forEachIndexed { i1, e1 ->
+			entities.forEachIndexed { i2, e2 ->
+				distances[entityToCluster.getValue(e1)][entityToCluster.getValue(e2)] += entitySimilarityMatrix[i1][i2]
+			}
+		}
+		distances.forEachIndexed { c1, dist ->
+			dist.forEachIndexed { c2, d ->
+				dist[c2] = d / (clusters[c1].size * clusters[c2].size)
+			}
+		}
+		return distances
 	}
 
 	fun userEntityHeatMap(): BufferedImage {
@@ -82,7 +112,7 @@ class ClusterInput private constructor(
 
 	fun dominantSetClusters(continueCondition: ContinueCondition = DefaultContinueCondition()): Sequence<DSClusterOutput> {
 		return generateSequence(extractDominantSet(continueCondition)) { prev ->
-			val newInput = prev.input.withoutEntities(prev.dominantSet)
+			val newInput = prev.input.without(prev.dominantSet)
 			if (newInput.entities.isNotEmpty()) {
 				newInput.extractDominantSet(continueCondition)
 			} else null
