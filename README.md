@@ -106,5 +106,15 @@ Dominant set clustering has more of these dimmed lines, which means that more cl
 
 It's especially impressive that dominant sets produce lower inter clusters similarities with respect to spectral clustering, considering that the latter algorithm derives directly from the problem of minimizing normalized cuts between clusters, a measure that is very related to this benchmark. 
 
+#### Cluster sizes
+![Sizes plot](out/sizes.png)  
+
+Although bigger or smaller clusters don't necessarily translate to better or worst clusters, it's interesting to compare the two different sizes distributions.   
+It appears that dominant set clustering has more unbalanced clusters, while spectral clusters have more similar sizes.  
+This is completely expected, given the nature of the two algorithms, and that's probably one of the reasons why dominant set performs better. Unbalanced clusters allow to better fit the data.  
+
 ## Conclusion
-Both qualitative and quantitative observations favors the results produced by dominant set clustering.  
+Both qualitative and quantitative observations favors the results produced by dominant set clustering.
+  
+This is a remarkable result, given that we forced dominant set to completely partition the dataset. Lifting this requirement will improve all the benchmarks measures, and favour dominant sets even more.  
+Although this approach will be preferable in most real life applications, I choose to completely partition the data to have a more fair comparison with respect to spectral clustering. 

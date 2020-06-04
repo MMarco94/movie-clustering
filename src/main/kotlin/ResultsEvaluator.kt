@@ -16,8 +16,8 @@ fun readCluster(file: File): List<Node.Entity> {
 }
 
 fun main() {
-	//val clusterAlgorithm = "spectral.8192"
-	val clusterAlgorithm = "ds.8192"
+	val clusterAlgorithm = "spectral.8192"
+	//val clusterAlgorithm = "ds.8192"
 
 	val clusters = File(outputDir, clusterAlgorithm).listFiles()!!.mapNotNull { file ->
 		val matchResult = "cluster-(\\d+)\\.txt".toRegex().matchEntire(file.name)
@@ -26,7 +26,7 @@ fun main() {
 		} else null
 	}.toMap()
 
-	val graph = FileLoader.loadGraph(CosinDistance)
+	/*val graph = FileLoader.loadGraph(CosinDistance)
 	println("Average distances:")
 	val distances = graph.subClusterDistances(clusters.values.toList())
 	ImageIO.write(distances.asList().toImage(), "png", File(outputDir, "distances.png"))
@@ -36,6 +36,12 @@ fun main() {
 	println("Densities:")
 	clusters.values.forEach { entities ->
 		println(graph.intersection(entities.toSet()).density())
+	}
+	println("\n\n\n")*/
+
+	println("Sizes:")
+	clusters.values.forEach { entities ->
+		println(entities.size)
 	}
 	println("\n\n\n")
 
