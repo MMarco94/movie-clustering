@@ -2,22 +2,21 @@
 
 This repository is a collection of scripts to cluster movies according to the users who watched them.
 
+The goal of the project is to compare dominant set clustering with spectral clustering, to see which algorithm works best in this context.
+
 ## Data source
 The source of the data is an online service accessible via https://everyfad.com/movies or the Android app [MoviesFad](https://play.google.com/store/apps/details?id=fema.moviesfad).
 
 In order to run code in this project, you need to have access to this database and to some libraries that facilitate the reading of the data. 
 At the moment, those resources are not public. 
 
-For this project, I considered the 20000 most active users and the 10000 most watched movies. The data was taken in April 2020.
+For this project, I considered the 20000 most active users and the 8192 most watched movies. The data was taken in April 2020.
 
 The data is about how many times each of those users watched each of those movies.
 
-## Clustering methods
-This project aims to show the differences between spectral clustering and dominant sets clustering for clustering movies.
-
 ## Data representation
 The most natural embedding of movies in this context is to use the N dimensionality space, with N=20000, in which each dimension is a different user. The value of each dimension is proportional to the logarithm of how many times the user watched a particular movie.  
-Using the logarithm allows to reduce the effect of noise and glitches: for example the data imported from a particular external service contained a lot of repetition, so for example it may appear that an user watched the same movie dozens of times.
+Using the logarithm allows to reduce the effect of noise and glitches: for example the data imported from a particular external service contained a lot of repetition, so for example it may wrongly appear that an user watched the same movie dozens of times.
 
 For this project, I choose to use a pairwise clustering approach, i.e. clustering movies according to their pairwise similarities instead of directly using this high dimensionality representation.  
 This similarity is the result of the Gaussian kernel applied to the cosine distances between movies. 
@@ -36,7 +35,7 @@ Since the data comes from real viewings that user logged in an Android applicati
  
  Those biases are so strong they are clearly visible from the similarity matrix. For example, this image represents the pairwise similarities among the 200 most popular movies (the brighter the pixel, the higher the similarity).  
 ![top 200 movies similarity matrix](out/top200-similarities.png)  
- As expected, basically all pairs have a high similarity, since the most popular movies have been watched by basically all users.
+ As expected, basically all pairs have a high similarity regardless on the movie itself, since the most popular movies have been watched by basically all users.
  
 ## Dominant sets clustering
 For the purpose of this project, the simpler version of dominant set clustering was used: the discrete replicator dynamics algorithm in combination with the peel off strategy.  
@@ -80,17 +79,16 @@ For Dominant sets clustering:
 It's obvious that some of those observations are very subjective, but nonetheless they portray a clear picture: dominant set seems to produce better qualitative results.
 
 ### Quantitative evaluation
-To measure the quality of clusters, I used measured and plotted the average density of each subgraph, and the average distance between all pairs of subgraphs.
 
 #### Intra cluster similarities
 ![Densities plot](out/densities.png)  
 
 This plot shows the clusters on the x axis and the density (average similarity) on the y axis.  
 It's interesting to note that both algorithms produce very similar result, and both algorithms produced 3 clusters in which the average similarity is almost `1`, meaning they were watched by the same users.  
-Dominant sets produced slightly better results after the 20th cluster.
+That said, dominant sets produced slightly better results after the 20th cluster.
 
 #### Inter cluster similarities
-The average Inter cluster similarity between clusters (the average similarity between all pairs of movies of two different clusters) is `0.384` for dominant set clustering and `0.394` for spectral clustering.  
+The average inter cluster similarity (the average similarity between all pairs of movies of two different clusters) is `0.384` for dominant set clustering and `0.394` for spectral clustering.  
 Again, very similar numbers, but slightly better for dominant sets.
 
 These images represent a `cluster x cluster` matrix, in which the brightness of each pixel is proportional to the average similarity between the two clusters.  
@@ -109,12 +107,12 @@ It's especially impressive that dominant sets produce lower inter clusters simil
 #### Cluster sizes
 ![Sizes plot](out/sizes.png)  
 
-Although bigger or smaller clusters don't necessarily translate to better or worst clusters, it's interesting to compare the two different sizes distributions.   
-It appears that dominant set clustering has more unbalanced clusters, while spectral clusters have more similar sizes.  
-This is completely expected, given the nature of the two algorithms, and that's probably one of the reasons why dominant set performs better. Unbalanced clusters allow to better fit the data.  
+Although bigger or smaller clusters don't necessarily translate to better or worst clusters, it's interesting to compare the two different size distributions.   
+It appears that dominant set clustering has more unbalanced clusters, while spectral clusters has more similarly sized clusters.  
+This is completely expected, given the nature of the two algorithms, and that's probably one of the reasons why dominant set performs better. Having unbalanced clusters allows to better fit the data.  
 
 ## Conclusion
 Both qualitative and quantitative observations favors the results produced by dominant set clustering.
   
-This is a remarkable result, given that we forced dominant set to completely partition the dataset. Lifting this requirement will improve all the benchmarks measures, and favour dominant sets even more.  
+This is a remarkable result, given that we forced dominant set to completely partition the dataset. Lifting this requirement will improve all the benchmarks measures, and favour dominant set even more.  
 Although this approach will be preferable in most real life applications, I choose to completely partition the data to have a more fair comparison with respect to spectral clustering. 
